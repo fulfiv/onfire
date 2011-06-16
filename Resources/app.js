@@ -52,14 +52,23 @@ var label2 = Titanium.UI.createLabel({
 
 win2.add(label2);
 
+var partyWindow = Titanium.UI.createWindow({
+	title:'Parties',
+	url:'windows/party_window.js'
+});
 
+var partyTab = Titanium.UI.createTab({
+	icon:'KS_nav_views.png',
+	title:'Parties',
+	window:partyWindow
+});
 
 //
 //  add tabs
 //
 tabGroup.addTab(tab1);  
 tabGroup.addTab(tab2);  
-
+tabGroup.addTab(partyTab);
 
 // open tab group
 tabGroup.open();
