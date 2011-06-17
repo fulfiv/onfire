@@ -70,5 +70,16 @@ tabGroup.addTab(tab1);
 tabGroup.addTab(tab2);  
 tabGroup.addTab(partyTab);
 
+tabGroup.addEventListener('focus', function(e)
+{
+	setTimeout(function()
+	    {       
+	        Ti.API.info('tab changed to ' + e.tab.title);
+	    },100);
+	if (e.tab.title == 'Parties') {
+		
+	}
+});
+
 // open tab group
 tabGroup.open();
