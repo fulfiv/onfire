@@ -88,35 +88,6 @@ else
 	Titanium.Geolocation.distanceFilter = 10;
 }
 
-if (Titanium.Platform.name == 'android')
-{
-	//  as the destroy handler will remove the listener, only set the pause handler to remove if you need battery savings
-	Ti.Android.currentActivity.addEventListener('pause', function(e) {
-		Ti.API.info("pause event received");
-		if (locationAdded) {
-			Ti.API.info("removing location callback on pause");
-			Titanium.Geolocation.removeEventListener('location', locationCallback);
-			locationAdded = false;
-		}
-	});
-	Ti.Android.currentActivity.addEventListener('destroy', function(e) {
-		Ti.API.info("destroy event received");
-		if (locationAdded) {
-			Ti.API.info("removing location callback on destroy");
-			Titanium.Geolocation.removeEventListener('location', locationCallback);
-			locationAdded = false;
-		}
-	});
-	Ti.Android.currentActivity.addEventListener('resume', function(e) {
-		Ti.API.info("resume event received");
-		if (!locationAdded) {
-			Ti.API.info("adding location callback on resume");
-			Titanium.Geolocation.addEventListener('location', locationCallback);
-			locationAdded = true;
-		}
-	});
-}
-
 function getLocation(callback)
  {	
 	
