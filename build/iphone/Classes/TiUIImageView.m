@@ -421,7 +421,7 @@ DEFINE_EXCEPTIONS
 	{
 		[self removeAllImagesFromContainer];
 		
-		NSURL *url_ = [TiUtils toURL:img proxy:self.proxy];
+		NSURL *url_ = [TiUtils toURL:[img absoluteString] proxy:self.proxy];
 		
 		// NOTE: Loading from URL means we can't pre-determine any % value.
 		CGSize imageSize = CGSizeMake(TiDimensionCalculateValue(width, 0.0), 
@@ -441,7 +441,7 @@ DEFINE_EXCEPTIONS
 			NSURL *defURL = [TiUtils toURL:[self.proxy valueForKey:@"defaultImage"] proxy:self.proxy];
 			
 			if ((defURL == nil) && ![TiUtils boolValue:[self.proxy valueForKey:@"preventDefaultImage"] def:NO])
-			{
+			{	//This is a special case, because it IS built into the bundle despite being in the simulator.
 				NSString * filePath = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"modules/ui/images/photoDefault.png"];
 				defURL = [NSURL fileURLWithPath:filePath];
 			}
@@ -460,6 +460,7 @@ DEFINE_EXCEPTIONS
 		}
 		if (image!=nil)
 		{
+            [(TiUIImageViewProxy*)[self proxy] setImageURL:url_];
 			CGSize fullSize = [[ImageLoader sharedLoader] fullImageSize:img];
 			autoWidth = fullSize.width;
 			autoHeight = fullSize.height;
@@ -532,6 +533,10 @@ DEFINE_EXCEPTIONS
 		
 		image = [[ImageLoader sharedLoader] loadImmediateImage:url_ withSize:CGSizeMake(TiDimensionCalculateValue(width, autoWidth), 
 																						TiDimensionCalculateValue(height, autoHeight))];
+        
+        if (image != nil) {
+            [(TiUIImageViewProxy*)[self proxy] setImageURL:url_];
+        }
 	}
 	else if ([arg isKindOfClass:[UIImage class]])
 	{
@@ -661,6 +666,9 @@ DEFINE_EXCEPTIONS
 		// called within this class
 		image = (UIImage*)arg;
 		image = [self scaleImageIfRequired:image];
+        
+        autoWidth = image.size.width;
+        autoHeight = image.size.height;
 	}
 	else 
 	{
@@ -669,16 +677,18 @@ DEFINE_EXCEPTIONS
 	
 	if (image == nil) 
 	{
-		if ([arg isKindOfClass:[NSString class]] || [arg isKindOfClass:[NSURL class]])
+		if ([arg isKindOfClass:[NSString class]])
+		{
+			[self loadUrl:[NSURL URLWithString:arg]];
+			return;
+		}
+		if ([arg isKindOfClass:[NSURL class]])
 		{
 			[self loadUrl:arg];
 			return;
 		}
-		else
-		{
-			[self throwException:@"invalid image type" subreason:[NSString stringWithFormat:@"expected either TiBlob or TiFile, was: %@",[arg class]] location:CODELOCATION];
-			return;
-		}
+		[self throwException:@"invalid image type" subreason:[NSString stringWithFormat:@"expected either TiBlob or TiFile, was: %@",[arg class]] location:CODELOCATION];
+		return;
 	}
 	
 	[imageview setImage:image];

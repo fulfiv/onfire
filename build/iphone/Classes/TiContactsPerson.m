@@ -153,7 +153,7 @@ static NSDictionary* multiValueLabels;
 
 #pragma mark Multi-value property management
 
--(NSDictionary*)dictionaryFromMultiValue:(ABMultiValueRef)multiValue
+-(NSDictionary*)dictionaryFromMultiValue:(ABMultiValueRef)multiValue defaultKey:(NSString*)defaultKey
 {
 	NSMutableDictionary* dict = [NSMutableDictionary dictionary];
 
@@ -168,7 +168,12 @@ static NSDictionary* multiValueLabels;
 			readableLabel = [labelKeys objectAtIndex:0];
 		}
 		else {
-			readableLabel = (NSString*)label;
+            if (label == NULL) {
+                readableLabel = defaultKey;
+            }
+            else {
+                readableLabel = (NSString*)label;
+            }
 		}
 
 		if ([dict valueForKey:readableLabel] == nil) {
@@ -184,7 +189,9 @@ static NSDictionary* multiValueLabels;
 			[[dict valueForKey:readableLabel] addObject:(id)value];
 		}
 		
-		CFRelease(label);
+        if (label != NULL) {
+            CFRelease(label);
+        }
 		CFRelease(value);
 	}
 	
@@ -293,7 +300,8 @@ static NSDictionary* multiValueLabels;
 {
 	if (![NSThread isMainThread]) {
 		[self performSelectorOnMainThread:@selector(valueForUndefinedKey:) withObject:key waitUntilDone:YES];
-		return [returnCache objectForKey:key];
+        id result = [returnCache objectForKey:key];
+		return ([result isKindOfClass:[NSNull class]] ? nil : result);
 	}
 	
 	id property = nil;
@@ -322,7 +330,7 @@ static NSDictionary* multiValueLabels;
 		ABMultiValueRef multiVal = ABRecordCopyValue([self record], propertyID);
 		id value = [NSNull null];
 		if (multiVal != NULL) {
-			value = [self dictionaryFromMultiValue:multiVal];
+			value = [self dictionaryFromMultiValue:multiVal defaultKey:key];
 			CFRelease(multiVal);
 		}
 		[returnCache setObject:value forKey:key];
@@ -331,7 +339,7 @@ static NSDictionary* multiValueLabels;
 	// Something else
 	else {
 		id result = [super valueForUndefinedKey:key];
-		[returnCache setObject:result forKey:key];
+		[returnCache setObject:(result == nil ? [NSNull null] : result) forKey:key];
 		return result;
 	}
 }

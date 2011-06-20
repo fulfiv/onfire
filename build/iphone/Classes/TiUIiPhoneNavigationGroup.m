@@ -20,8 +20,7 @@
 	{
 		return;
 	}
-	[visibleProxy _tabBeforeBlur];
-	[visibleProxy _tabBlur];
+    // NOTE: We don't need to blur the currently visible proxy, because it gets closed out by the close: call.
 	[visibleProxy autorelease];
 
 	visibleProxy = [newVisibleProxy retain];
@@ -88,12 +87,14 @@
 				[win retain];
 				[[win view] removeFromSuperview];
 				[win close:nil];
+				[[self proxy] forgetProxy:win];
 				[win autorelease];
 			}
 		}
 		[controller.view removeFromSuperview];
 		[controller resignFirstResponder];
 		RELEASE_TO_NIL(controller);
+		[visibleProxy autorelease];
 		visibleProxy = nil; // close/release handled by view removal
 	}
 }
@@ -143,9 +144,10 @@
 	
 	if (newWindow!=visibleProxy)
 	{
-		if (visibleProxy!=root && opening==NO)
+		if (visibleProxy != nil && visibleProxy!=root && opening==NO)
 		{
-			[self close:visibleProxy withObject:nil];
+			//TODO: This is a hideous hack, but NavGroup needs rewriting anyways
+			[[self proxy] close:[NSArray arrayWithObject:visibleProxy]];
 		}
 		[self setVisibleProxy:newWindow];
 	}

@@ -86,32 +86,6 @@ else
 	//  THIS VALUE IS IN METERS
 	//
 	Titanium.Geolocation.distanceFilter = 10;
-
-	//
-	// GET CURRENT POSITION - THIS FIRES ONCE
-	//
-	Titanium.Geolocation.getCurrentPosition(function(e)
-	{
-		if (!e.success || e.error)
-		{
-			Ti.API.info("Code translation: "+translateErrorCode(e.code));
-			alert('error ' + JSON.stringify(e.error));
-			return;
-		}
-
-	  longitude = e.coords.longitude;
-		latitude = e.coords.latitude;
-		altitude = e.coords.altitude;
-		heading = e.coords.heading;
-		accuracy = e.coords.accuracy;
-		speed = e.coords.speed;
-		timestamp = e.coords.timestamp;
-		altitudeAccuracy = e.coords.altitudeAccuracy;
-		Ti.API.info('speed ' + speed);
-
-		Titanium.API.info('geo - current location: ' + new Date(timestamp) + ' long ' + longitude + ' lat ' + latitude + ' accuracy ' + accuracy);
-	});
-
 }
 
 if (Titanium.Platform.name == 'android')
@@ -154,7 +128,10 @@ function getLocation(callback)
 		if (!e.success || e.error)
 		{
 			Ti.API.info("Code translation: "+translateErrorCode(e.code));
-			alert('error ' + JSON.stringify(e.error));
+			//alert('error ' + JSON.stringify(e.error));
+			longitude = 2;
+			latitude = 48;
+			if (callback) callback();
 			return;
 		}
 

@@ -66,7 +66,7 @@ static const NSTimeInterval kLauncherViewFastTransitionDuration = 0.2;
 
 @implementation LauncherView
 
-@synthesize columnCount, rowCount, delegate;
+@synthesize columnCount, rowCount, delegate, editable;
 
 - (id)initWithFrame:(CGRect)frame 
 {
@@ -75,6 +75,7 @@ static const NSTimeInterval kLauncherViewFastTransitionDuration = 0.2;
 		self.columnCount = kLauncherViewDefaultColumnCount;
 		self.rowCount = 0;
 		self.currentPageIndex = 0;
+        self.editable = YES;
 		
 		scrollView = [[LauncherScrollView alloc] initWithFrame:CGRectMake(0, 0, frame.size.width, frame.size.height - kLauncherViewPagerHeight - 30)];
 		scrollView.delegate = self;
@@ -675,7 +676,7 @@ static const NSTimeInterval kLauncherViewFastTransitionDuration = 0.2;
 
 - (void)editHoldTimer:(NSTimer*)timer 
 {
-	editHoldTimer = nil;
+    editHoldTimer = nil;
 
 	[self beginEditing];
 	
@@ -702,11 +703,12 @@ static const NSTimeInterval kLauncherViewFastTransitionDuration = 0.2;
 	else 
 	{
 		TI_INVALIDATE_TIMER(editHoldTimer);
-		
-		editHoldTimer = [NSTimer scheduledTimerWithTimeInterval:kLauncherViewEditHoldTimeInterval
-														  target:self selector:@selector(editHoldTimer:)
-														userInfo:[NSArray arrayWithObjects:button,event,nil]
-														 repeats:NO];
+        if (editable) {
+            editHoldTimer = [NSTimer scheduledTimerWithTimeInterval:kLauncherViewEditHoldTimeInterval
+                                                             target:self selector:@selector(editHoldTimer:)
+                                                           userInfo:[NSArray arrayWithObjects:button,event,nil]
+                                                            repeats:NO];
+        }
 	}
 }
 
@@ -805,7 +807,7 @@ static const NSTimeInterval kLauncherViewFastTransitionDuration = 0.2;
 	NSInteger column = round(x/dragButton.frame.size.width);
 	NSInteger row = round(origin.y/dragButton.frame.size.height);
 	NSInteger itemIndex = (row * self.columnCount) + column;
-	NSInteger pageIndex = floor(scrollView.contentOffset.x/scrollView.frame.size.width);
+	NSInteger pageIndex = MAX(floor(scrollView.contentOffset.x/scrollView.frame.size.width),0);
 	
 	if (itemIndex != positionOrigin) 
 	{

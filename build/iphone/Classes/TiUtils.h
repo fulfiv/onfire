@@ -11,6 +11,16 @@
 #import "TiDimension.h"
 #import "WebFont.h"
 #import "TiFile.h"
+#import "TiBuffer.h"
+
+typedef enum {
+    BAD_DEST_OFFSET = -1,
+    BAD_SRC_OFFSET = -2,
+    BAD_ENCODING = -4,
+    BAD_TYPE = -8,
+    BAD_ENDIAN = -16,
+    TOO_SMALL = -32,
+} EncodingError;
 
 @interface TiUtils : NSObject {
 
@@ -35,7 +45,9 @@
 +(UIImage*)toImage:(id)object proxy:(TiProxy*)proxy size:(CGSize)imageSize;
 +(UIImage*)toImage:(id)object proxy:(TiProxy*)proxy;
 
-+(NSURL*)toURL:(id)object proxy:(TiProxy*)proxy;
++(NSURL*)toURL:(NSString *)relativeString relativeToURL:(NSURL *)rootPath;
++(NSURL*)toURL:(NSString *)object proxy:(TiProxy*)proxy;
+//+(NSURL*)toURL:(id)object proxy:(TiProxy*)proxy;
 
 +(UIImage *)image:(id)object proxy:(TiProxy*)proxy;
 
@@ -43,6 +55,8 @@
 
 +(NSString*)stringValue:(id)value;
 +(NSString*)replaceString:(NSString *)string characters:(NSCharacterSet *)characterSet withString:(NSString *)replacementString;
+
++(NSNumber *) numberFromObject:(id) obj;
 
 +(BOOL)boolValue:(id)value;
 
@@ -57,7 +71,13 @@
 
 +(CGFloat)floatValue:(id)value def:(CGFloat) def;
 
++(CGFloat)floatValue:(id)value def:(CGFloat) def valid:(BOOL *) isValid;
+
 +(double)doubleValue:(id)value;
+
++(double)doubleValue:(id)value def:(double) def;
+
++(double)doubleValue:(id)value def:(double) def valid:(BOOL *) isValid;
 
 +(int)intValue:(id)value;
 
@@ -185,5 +205,15 @@
 +(BOOL)isIPhone4;
 
 +(BOOL)isRetinaDisplay;
+
++(NSStringEncoding)charsetToEncoding:(NSString*)charset;
+
++(TiDataType)constantToType:(NSString*)typeStr;
+
++(size_t)dataSize:(TiDataType)type;
+
++(int)encodeString:(NSString*)string toBuffer:(TiBuffer*)dest charset:(NSString*)charset offset:(int)destPosition sourceOffset:(int)srcPosition length:(int)srcLength;
+
++(int)encodeNumber:(NSNumber*)data toBuffer:(TiBuffer*)dest offset:(int)position type:(NSString*)type endianness:(CFByteOrder)byteOrder;
 
 @end

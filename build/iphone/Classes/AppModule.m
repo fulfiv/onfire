@@ -130,7 +130,7 @@ extern NSString * const TI_APPLICATION_GUID;
 		id obj = [args count] > 1 ? [args objectAtIndex:1] : nil;
 		
 #ifdef DEBUG
-		NSLog(@"[DEBUG] fire app event: %@ with %@",type,obj);
+		NSLog(@"[DEBUG] fire app event: %@",type);
 #endif
 		
 		NSArray *array = [appListeners objectForKey:type];
@@ -168,11 +168,17 @@ extern NSString * const TI_APPLICATION_GUID;
 	[self fireEvent:[NSArray arrayWithObjects:type,obj,nil]];
 }
 
+-(int)garbageCollect:(NSArray*)args
+{
+	KrollBridge * ourBridge = [self executionContext];
+	return [ourBridge forceGarbageCollectNow];
+}
+
 -(TiAppPropertiesProxy*)Properties
 {
 	if (properties == nil)
 	{
-		properties = [[TiAppPropertiesProxy alloc] _initWithPageContext:[self pageContext]];
+		properties = [[TiAppPropertiesProxy alloc] _initWithPageContext:[self executionContext]];
 	}
 	return properties;
 }
@@ -337,8 +343,7 @@ extern NSString * const TI_APPLICATION_GUID;
 	{
 		args = [args stringByReplacingOccurrencesOfString:@"app://" withString:@""];
 	}
-	NSString *path = [[NSBundle mainBundle] resourcePath];
-	return [NSString stringWithFormat:@"%@/%@",path,args];
+	return [[TiHost resourcePath] stringByAppendingPathComponent:args];
 }
 
 -(id)arguments:(id)args
@@ -406,7 +411,7 @@ extern NSString * const TI_APPLICATION_GUID;
 {
 	if (iOS==nil)
 	{
-		iOS = [[TiAppiOSProxy alloc] _initWithPageContext:[self pageContext]];
+		iOS = [[TiAppiOSProxy alloc] _initWithPageContext:[self executionContext]];
 	}
 	return iOS;
 }

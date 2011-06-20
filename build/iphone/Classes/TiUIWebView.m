@@ -38,6 +38,7 @@ NSString * const konfireJavascript = @"Ti.App={};Ti.API={};Ti.App._listeners={};
 
  
 @implementation TiUIWebView
+@synthesize reloadData;
 
 -(void)dealloc
 {
@@ -60,6 +61,7 @@ NSString * const konfireJavascript = @"Ti.App={};Ti.API={};Ti.App._listeners={};
 	RELEASE_TO_NIL(url);
 	RELEASE_TO_NIL(spinner);
 	RELEASE_TO_NIL(basicCredentials);
+	RELEASE_TO_NIL(reloadData);
 	[super dealloc];
 }
 
@@ -158,7 +160,7 @@ NSString * const konfireJavascript = @"Ti.App={};Ti.API={};Ti.App._listeners={};
 
 -(NSURL*)fileURLToAppURL:(NSURL*)url_
 {
-	NSString *basepath = [[NSBundle mainBundle] resourcePath];
+	NSString *basepath = [TiHost resourcePath];
 	NSString *urlstr = [url_ path];
 	NSString *path = [urlstr stringByReplacingOccurrencesOfString:[NSString stringWithFormat:@"%@/",basepath] withString:@""];
 	if ([path hasPrefix:@"/"])
@@ -257,10 +259,16 @@ NSString * const konfireJavascript = @"Ti.App={};Ti.API={};Ti.App._listeners={};
 
 - (void)reload:(id)args
 {
-	if (webview!=nil)
+	if (webview == nil)
 	{
-		[webview reload];
+		return;
 	}
+	if (reloadData != nil)
+	{
+		[self performSelector:reloadMethod withObject:reloadData];
+		return;
+	}
+	[webview reload];
 }
 
 - (void)stopLoading:(id)args
@@ -325,11 +333,17 @@ NSString * const konfireJavascript = @"Ti.App={};Ti.API={};Ti.App._listeners={};
 
 -(void)setHtml_:(NSString*)content
 {
+	ignoreNextRequest = YES;
+	[self setReloadData:content];
+	reloadMethod = @selector(setHtml_:);
 	[self loadHTML:content encoding:NSUTF8StringEncoding textEncodingName:@"utf-8" mimeType:@"text/html" baseURL:nil];
 }
 
 -(void)setData_:(id)args
 {
+	ignoreNextRequest = YES;
+	[self setReloadData:args];
+	reloadMethod = @selector(setData_:);
 	RELEASE_TO_NIL(url);
 	ENSURE_SINGLE_ARG(args,NSObject);
 	if ([args isKindOfClass:[TiBlob class]])
@@ -390,6 +404,10 @@ NSString * const konfireJavascript = @"Ti.App={};Ti.API={};Ti.App._listeners={};
 
 -(void)setUrl_:(id)args
 {
+	ignoreNextRequest = YES;
+	[self setReloadData:args];
+	reloadMethod = @selector(setUrl_:);
+
 	RELEASE_TO_NIL(url);
 	ENSURE_SINGLE_ARG(args,NSString);
 	
@@ -624,6 +642,16 @@ NSString * const konfireJavascript = @"Ti.App={};Ti.API={};Ti.App._listeners={};
 	NSString * scheme = [[newUrl scheme] lowercaseString];
 	if ([scheme hasPrefix:@"http"] || [scheme hasPrefix:@"app"] || [scheme hasPrefix:@"file"] || [scheme hasPrefix:@"ftp"])
 	{
+		NSLog(@"New scheme: %@",request);
+		if (ignoreNextRequest)
+		{
+			ignoreNextRequest = NO;
+		}
+		else
+		{
+			[self setReloadData:[newUrl absoluteString]];
+			reloadMethod = @selector(setUrl_:);
+		}
 		return YES;
 	}
 	

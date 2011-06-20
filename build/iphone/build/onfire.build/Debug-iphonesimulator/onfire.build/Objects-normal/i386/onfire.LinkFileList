@@ -207,11 +207,8 @@
 /Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/TiMediaMusicPlayer.o
 /Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/TiMediaItem.o
 /Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/TiLayoutQueue.o
-/Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/TiDebuggerContext.o
-/Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/TiDebugger.o
 /Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/AsyncSocket.o
 /Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/AsyncUdpSocket.o
-/Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/TiDebuggerCallFrame.o
 /Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/TiContactsGroup.o
 /Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/ApplicationMods.o
 /Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/TiUIiOSAdViewProxy.o
@@ -254,3 +251,11 @@
 /Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/FBLoginButton.o
 /Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/FBLoginDialog.o
 /Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/FBRequest.o
+/Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/TiNetworkSocketTCPProxy.o
+/Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/TiBuffer.o
+/Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/StreamModule.o
+/Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/TiStreamProxy.o
+/Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/CodecModule.o
+/Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/TiNetworkSocketProxy.o
+/Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/TiDataStream.o
+/Users/simon/fulfiv/onfire/build/iphone/build/onfire.build/Debug-iphonesimulator/onfire.build/Objects-normal/i386/TiFilesystemFileStreamProxy.o

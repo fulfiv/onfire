@@ -17,16 +17,23 @@
 
 @implementation TiUIDashboardViewProxy
 
+-(id)init
+{
+    if (self = [super init]) {
+        [self setValue:[NSNumber numberWithBool:YES] forUndefinedKey:@"editable"];
+    }
+    return self;
+}
+
 -(void)startEditing:(id)args
 {
-	[[self view] performSelectorOnMainThread:@selector(startEditing) withObject:nil waitUntilDone:NO];
+    [self makeViewPerformSelector:@selector(startEditing) withObject:nil createIfNeeded:YES waitUntilDone:NO];
 }
 
 -(void)stopEditing:(id)args
 {
-	[[self view] performSelectorOnMainThread:@selector(stopEditing) withObject:nil waitUntilDone:NO];
+    [self makeViewPerformSelector:@selector(stopEditing) withObject:nil createIfNeeded:YES waitUntilDone:NO];    
 }
-
 
 -(void)fireEvent:(NSString *)type withObject:(id)obj withSource:(id)source propagate:(BOOL)propagate
 {

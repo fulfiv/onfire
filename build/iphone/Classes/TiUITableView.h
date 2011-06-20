@@ -27,7 +27,7 @@
 	CGPoint hitPoint;
 }
 @property (nonatomic,readonly) CGPoint hitPoint;
-@property (nonatomic,readonly) TiUITableViewRowProxy* proxy;
+@property (nonatomic,readwrite) TiUITableViewRowProxy* proxy;
 
 -(id)initWithStyle:(UITableViewCellStyle)style_ reuseIdentifier:(NSString *)reuseIdentifier_ row:(TiUITableViewRowProxy*)row_;
 
@@ -79,6 +79,7 @@
 -(void)updateSearchView;
 -(NSMutableArray*)sections;
 -(void)replaceData:(NSArray*)data animation:(UITableViewRowAnimation)animation;
+-(void)detachContents;
 
 -(void)dispatchAction:(TiUITableViewAction*)action;
 -(void)scrollToIndex:(NSInteger)index position:(UITableViewScrollPosition)position animated:(BOOL)animated;

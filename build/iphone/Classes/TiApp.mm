@@ -14,8 +14,8 @@
 #import "TiBase.h"
 #import "TiErrorController.h"
 #import "NSData+Additions.h"
-#import "TiDebugger.h"
 #import "ImageLoader.h"
+#import "TiDebugger.h"
 #import <QuartzCore/QuartzCore.h>
 #import <AVFoundation/AVFoundation.h>
 
@@ -23,9 +23,13 @@
 
 TiApp* sharedApp;
 
+int TiDebugPort = 2525;
+
 extern NSString * const TI_APPLICATION_DEPLOYTYPE;
 extern NSString * const TI_APPLICATION_NAME;
 extern NSString * const TI_APPLICATION_VERSION;
+
+NSString * TITANIUM_VERSION;
 
 extern void UIColorFlushCache();
 
@@ -97,6 +101,23 @@ void MyUncaughtExceptionHandler(NSException *exception)
 {
 	return [sharedApp controller];
 }
+
+-(TiContextGroupRef)contextGroup
+{
+	if(contextGroup == nil)
+	{
+		contextGroup = TiContextGroupCreate();
+		TiContextGroupRetain(contextGroup);
+	}
+	return contextGroup;
+}
+
+
++(TiContextGroupRef)contextGroup
+{
+	return [sharedApp contextGroup];
+}
+
 
 -(void)startNetwork
 {
@@ -259,13 +280,22 @@ void MyUncaughtExceptionHandler(NSException *exception)
 
 - (void)boot
 {
-	NSLog(@"[INFO] %@/%@ (%s.878906d)",TI_APPLICATION_NAME,TI_APPLICATION_VERSION,TI_VERSION_STR);
+	NSLog(@"[INFO] %@/%@ (%s.e6afca8)",TI_APPLICATION_NAME,TI_APPLICATION_VERSION,TI_VERSION_STR);
 	
 	sessionId = [[TiUtils createUUID] retain];
+	TITANIUM_VERSION = [[NSString stringWithCString:TI_VERSION_STR encoding:NSUTF8StringEncoding] retain];
 
-#ifdef DEBUGGER_ENABLED
-	[[TiDebugger sharedDebugger] start];
-#endif
+	NSString *filePath = [[NSBundle mainBundle] pathForResource:@"debugger" ofType:@"plist"];
+    if (filePath != nil) {
+        NSMutableDictionary *params = [[NSMutableDictionary alloc] initWithContentsOfFile:filePath];
+        NSString *host = [params objectForKey:@"host"];
+        NSString *port = [params objectForKey:@"port"];
+        if (host != nil && ![host isEqual:@""] && ![host isEqual:@"__DEBUGGER_HOST__"])
+        {
+            [self setDebugMode:YES];
+            TiDebuggerStart(host,[port intValue]);
+        }
+    }
 	
 	kjsBridge = [[KrollBridge alloc] initWithHost:self];
 	
@@ -643,9 +673,9 @@ void MyUncaughtExceptionHandler(NSException *exception)
 	RELEASE_TO_NIL(userAgent);
 	RELEASE_TO_NIL(remoteDeviceUUID);
 	RELEASE_TO_NIL(remoteNotification);
-#ifdef DEBUGGER_ENABLED
-	[[TiDebugger sharedDebugger] stop];
-#endif
+    if ([self debugMode]) {
+        TiDebuggerStop();
+    }
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_4_0
 	RELEASE_TO_NIL(backgroundServices);
 	RELEASE_TO_NIL(localNotification);

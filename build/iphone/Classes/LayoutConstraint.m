@@ -44,7 +44,7 @@ else (width is invalid)
 CGSize SizeConstraintViewWithSizeAddingResizing(LayoutConstraint * constraint, NSObject<LayoutAutosizing> * autoSizer, CGSize boundSize, UIViewAutoresizing * resultResizing)
 {
 	//TODO: Refactor for elegance.
-	CGFloat width;
+	CGFloat width = 0.0f;
 
 	if(resultResizing != NULL)
 	{
@@ -135,7 +135,7 @@ CGPoint PositionConstraintGivenSizeBoundsAddingResizing(LayoutConstraint * const
 	*resultResizing &= ~(UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin);
 
 	BOOL ignoreMargins;
-	CGFloat centerX;
+	CGFloat centerX = 0.0f;
 
 	if(!flexibleSize)
 	{
@@ -182,7 +182,7 @@ CGPoint PositionConstraintGivenSizeBoundsAddingResizing(LayoutConstraint * const
 	}
 	
 	flexibleSize = *resultResizing & UIViewAutoresizingFlexibleHeight;
-	CGFloat centerY;
+	CGFloat centerY = 0.0f;
 
 	if(!flexibleSize)
 	{

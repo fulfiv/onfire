@@ -12,6 +12,7 @@
 #import "TiUtils.h"
 #import "TiAnimation.h"
 #import "TiAction.h"
+#import "TiErrorController.h"
 
 TiOrientationFlags TiOrientationFlagsFromObject(id args)
 {
@@ -88,13 +89,25 @@ TiOrientationFlags TiOrientationFlagsFromObject(id args)
 	}
 }
 
+-(void) dealloc {
+	RELEASE_TO_NIL(navController);
+	RELEASE_TO_NIL(controller);
+	
+	[super dealloc];
+}
+
 -(void)_destroy
 {
-	RELEASE_TO_NIL(controller);
-	RELEASE_TO_NIL(navController);
+	[(TiViewController*)controller setProxy:nil];
+
 	RELEASE_TO_NIL(tab);
 	RELEASE_TO_NIL(reattachWindows);
 	RELEASE_TO_NIL(closeView);
+
+
+	RELEASE_TO_NIL(openAnimation);
+	RELEASE_TO_NIL(closeAnimation);
+	
 	[super _destroy];
 }
 
@@ -141,6 +154,8 @@ END_UI_THREAD_PROTECTED_VALUE(opened)
 	[super windowDidOpen];
 	
 	opening = NO;
+	[self forgetProxy:openAnimation];
+	RELEASE_TO_NIL(openAnimation);
 
 	if ([self _hasListeners:@"open"])
 	{
@@ -172,7 +187,6 @@ END_UI_THREAD_PROTECTED_VALUE(opened)
 	{
 		return;
 	}
-	
 	opened = YES;
 	
 	if (!navWindow) 
@@ -199,23 +213,26 @@ END_UI_THREAD_PROTECTED_VALUE(opened)
 	VerboseLog(@"%@ (modal:%d)%@",self,modalFlag,CODELOCATION);
 	[[[TiApp app] controller] didHideViewController:controller animated:YES];
 
+	[self forgetProxy:closeAnimation];
+	RELEASE_TO_NIL(closeAnimation);
 	opened = NO;
 	attached = NO;
 	opening = NO;
 	closing = NO;
 	
+	//TODO: Since windowDidClose also calls detachView, is this necessary?
 	[self detachView];
-	
 	// notify our child that his window is closing
 	for (TiViewProxy *child in self.children)
 	{
 		[child windowDidClose];
 	}
 	
-	[self windowDidClose];
-
 	RELEASE_TO_NIL(navController);
 	RELEASE_TO_NIL(controller);
+	
+	[self windowDidClose];
+	[self forgetSelf];
 }
 
 -(void)windowWillClose
@@ -331,26 +348,47 @@ END_UI_THREAD_PROTECTED_VALUE(opened)
 
 -(BOOL)isRootViewAttached
 {
-	return ([[[[TiApp app] controller] view] superview]!=nil);
+	BOOL result = ([[[[TiApp app] controller] view] superview]!=nil);
+	if (!result)
+	{
+		NSLog(@"[WARN] We still care about isRootViewAttached!!!!!!!");
+	}
+	return result;
 }
 
 -(void)open:(id)args
 {
-	ENSURE_UI_THREAD(open,args);
-
+	if ([[[[TiApp app] controller] modalViewController] isKindOfClass:[TiErrorController class]]) { // we have an error dialog up
+		return;
+	}
 	// opening a window more than once does nothing
 	if (opened==YES)
 	{
 		return;
 	}
+
+	[self rememberSelf];
 	
+	//First, we need to get our arguments in order. Perhaps in Opening.
+
 	if (opening==NO)
 	{
 		modalFlag = [self isModal:args];
 		fullscreenFlag = [self isFullscreen:args];
+		if (!modalFlag)
+		{
+			[self forgetProxy:openAnimation];
+			RELEASE_TO_NIL(openAnimation);
+			openAnimation = [[TiAnimation animationFromArg:args context:[self pageContext] create:NO] retain];
+			[self rememberProxy:openAnimation];
+		}
 		opening = YES;
 	}
-	
+	[self performSelectorOnMainThread:@selector(openOnUIThread:) withObject:args waitUntilDone:NO];
+}
+
+-(void)openOnUIThread:(NSArray*)args
+{
 	navWindow = NO;
 	BOOL rootViewAttached = [self isRootViewAttached];
 	
@@ -363,46 +401,39 @@ END_UI_THREAD_PROTECTED_VALUE(opened)
 		[self windowWillOpen];
 		[self windowReady];
 		
-		TiAnimation *animation = nil;
-		if (!modalFlag)
-		{
-			animation = [TiAnimation animationFromArg:args context:[self pageContext] create:NO];
-		}
-		if (animation!=nil)
+		if (openAnimation!=nil)
 		{
 			if (rootViewAttached)
 			{
-				[[[TiApp app] controller] willShowViewController:[self controller] animated:(animation != nil)];
+				[[TiApp controller] willShowViewController:[self controller] animated:YES];
 				[self attachViewToTopLevelWindow];
-				[[[TiApp app] controller] didShowViewController:[self controller] animated:animation!=nil];
+				[[TiApp controller] didShowViewController:[self controller] animated:YES];
 			}
-			if ([animation isTransitionAnimation])
+			if ([openAnimation isTransitionAnimation])
 			{
-				transitionAnimation = [[animation transition] intValue];
+				transitionAnimation = [[openAnimation transition] intValue];
 				splashTransitionAnimation = [[TiApp app] isSplashVisible];
 			}
-			animation.delegate = self;
-			[animation animate:self];
+			openAnimation.delegate = self;
+			[openAnimation animate:self];
 		}
 		if (fullscreenFlag)
 		{
-			fullscreenFlag = YES;
 			restoreFullscreen = [UIApplication sharedApplication].statusBarHidden;
 			[[UIApplication sharedApplication] setStatusBarHidden:YES];
 			[self view].frame = [[[TiApp app] controller] resizeView];
 		}
-		else if (modalFlag)
+		if (modalFlag)
 		{
 			modalFlag = YES;
 			attached = YES;
 			TiViewController *wc = (TiViewController*)[self controller];
-			UINavigationController *nc = nil;
-			
-			if ([self argOrWindowProperty:@"navBarHidden" args:args]==NO)
-			{
-				nc = [[[UINavigationController alloc] initWithRootViewController:wc] autorelease];
-			}
-			
+
+			UINavigationController *nc = [[[UINavigationController alloc] initWithRootViewController:wc] autorelease];
+
+			BOOL navBarHidden = [self argOrWindowProperty:@"navBarHidden" args:args];
+			[nc setNavigationBarHidden:navBarHidden];
+
 			NSDictionary *dict = [args count] > 0 ? [args objectAtIndex:0] : nil;
 			int style = [TiUtils intValue:@"modalTransitionStyle" properties:dict def:-1];
 			if (style!=-1)
@@ -412,22 +443,22 @@ END_UI_THREAD_PROTECTED_VALUE(opened)
 			}
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_3_2
 			style = [TiUtils intValue:@"modalStyle" properties:dict def:-1];
-			if (style!=-1 && [nc respondsToSelector:@selector(setModalPresentationStyle:)])
+			if (style!=-1)
 			{
 				// modal transition style page curl must be done only in fullscreen
 				// so only allow if not page curl
 				if ([wc modalTransitionStyle]!=UIModalTransitionStylePartialCurl)
 				{
 					[wc setModalPresentationStyle:style];
-					[nc setModalPresentationStyle:style];
+				    [nc setModalPresentationStyle:style];
 				}
 			}
-#endif			
-			[self setController:wc];
+#endif		
+//			[self setController:wc];
 			[self setNavController:nc];
 			BOOL animated = [TiUtils boolValue:@"animated" properties:dict def:YES];
 			[self setupWindowDecorations];
-			
+
 			if (rootViewAttached==NO)
 			{
 				//TEMP hack until we can figure out split view issue
@@ -440,17 +471,11 @@ END_UI_THREAD_PROTECTED_VALUE(opened)
 			}
 			else
 			{
-				if (nc!=nil)
-				{
-					[[TiApp app] showModalController:nc animated:animated];
-				}
-				else 
-				{
-					[[TiApp app] showModalController:wc animated:animated];
-				}
+				//showModalController will show the passed-in controller's navigation controller if it exists
+				[[TiApp app] showModalController:nc animated:animated];
 			}
 		}
-		if (animation==nil)
+		if (openAnimation==nil)
 		{
 			[self windowDidOpen];
 		}
@@ -461,7 +486,7 @@ END_UI_THREAD_PROTECTED_VALUE(opened)
 // goofiness, and need to perform the prepatory steps that open: usually does.
 -(void)prepareForNavView:(UINavigationController*)navController_
 {
-	ENSURE_UI_THREAD(prepareForNavView, navController_);
+	ENSURE_UI_THREAD_1_ARG(navController_)
 	
 	if (opened) {
 		return;
@@ -490,14 +515,11 @@ END_UI_THREAD_PROTECTED_VALUE(opened)
 
 -(void)close:(id)args
 {
-	ENSURE_UI_THREAD(close,args);
-	
 	// closing more than once does nothing
 	if (opened==NO)
 	{
 		return;
 	}
-	 
 	if ([self _isChildOfTab]) 
 	{
 		if (![args isKindOfClass:[NSArray class]] ||
@@ -509,12 +531,25 @@ END_UI_THREAD_PROTECTED_VALUE(opened)
 			if (args != nil) {
 				[closeArgs addObject:[args objectAtIndex:0]];
 			}
+			[self forgetProxy:closeAnimation];
+			RELEASE_TO_NIL(closeAnimation);
 			[[self tab] close:closeArgs];
 			return;
 		}
 	}
+	else if(![NSThread isMainThread])
+	{
+		[self forgetProxy:closeAnimation];
+		RELEASE_TO_NIL(closeAnimation);
+		closeAnimation = [[TiAnimation animationFromArg:args context:[self executionContext] create:NO] retain];
+		[self rememberProxy:closeAnimation];
+	}
 
-	VerboseLog(@"%@ (modal:%d)%@",self,modalFlag,CODELOCATION);
+	[self performSelectorOnMainThread:@selector(closeOnUIThread:) withObject:args waitUntilDone:YES];
+}
+
+-(void)closeOnUIThread:(id)args
+{
 	[self windowWillClose];
 
 	//TEMP hack until we can figure out split view issue
@@ -556,7 +591,10 @@ END_UI_THREAD_PROTECTED_VALUE(opened)
 	}	
 	
 	opening = NO;
-	UIView *myview = [self view];
+	UIView *myview = nil;
+	if([self viewAttached]) {
+		myview = [self view];
+	}
 	[[myview retain] autorelease];
 	
 	// hold ourself during close
@@ -571,14 +609,12 @@ END_UI_THREAD_PROTECTED_VALUE(opened)
 	VerboseLog(@"%@ (modal:%d)%@",self,modalFlag,CODELOCATION);
 	if ([self _handleClose:args])
 	{
-		TiAnimation *animation = [self _isChildOfTab] ? nil : [TiAnimation animationFromArg:args context:[self pageContext] create:NO];
-		
-		if (animation!=nil)
+		if (closeAnimation!=nil)
 		{
-			if ([animation isTransitionAnimation])
+			if ([closeAnimation isTransitionAnimation])
 			{
 				UIView *rootView = [[TiApp app] controller].view;
-				transitionAnimation = [[animation transition] intValue];
+				transitionAnimation = [[closeAnimation transition] intValue];
 				splashTransitionAnimation = [[rootView subviews] count]<=1 && modalFlag==NO;
 				if (splashTransitionAnimation)
 				{
@@ -601,10 +637,10 @@ END_UI_THREAD_PROTECTED_VALUE(opened)
 					}
 				}
 			}
-			animation.delegate = self;
+			closeAnimation.delegate = self;
 			// we need to hold a reference during close
 			closeView = [myview retain];
-			[animation animate:self];
+			[closeAnimation animate:self];
 		}
 		  
 		if (fullscreenFlag)
@@ -613,7 +649,7 @@ END_UI_THREAD_PROTECTED_VALUE(opened)
 			self.view.frame = [[[TiApp app] controller] resizeView];
 		} 
  
-		if (animation!=nil)
+		if (closeAnimation!=nil)
 		{
 			[self performSelector:@selector(windowClosed) withObject:nil afterDelay:0.8];
 		}
@@ -740,6 +776,7 @@ END_UI_THREAD_PROTECTED_VALUE(opened)
 
 -(void)animationWillStart:(id)sender
 {
+//	[self rememberProxy:sender];
 	if (opening)
 	{
 		if (splashTransitionAnimation==NO)
@@ -762,6 +799,7 @@ END_UI_THREAD_PROTECTED_VALUE(opened)
 
 -(void)animationDidComplete:(id)sender
 {
+	[self forgetProxy:sender];
 	if (opening)
 	{
 		[self windowDidOpen];

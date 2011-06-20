@@ -1,6 +1,6 @@
 /**
  * Appcelerator Titanium Mobile
- * Copyright (c) 2009-2011 by Appcelerator, Inc. All Rights Reserved.
+ * Copyright (c) 2009-2011 by onfire, Inc. All Rights Reserved.
  * Licensed under the terms of the Apache Public License
  * Please see the LICENSE included with this distribution for details.
  * 
@@ -19,11 +19,15 @@
 	NSURL *startURL;
 	NSURL *baseURL;
 	TiStylesheet *stylesheet;
+    BOOL debugMode;
 }
+@property (nonatomic,assign) BOOL debugMode;
 
 -(NSString*)appID;
 -(NSURL*)baseURL;
 -(NSURL*)startURL;
++(NSString *)resourcePath;
+
 -(TiStylesheet*)stylesheet;
 
 +(NSURL*)resourceBasedURL:(NSString*)fn baseURL:(NSString**)base;

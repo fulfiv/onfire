@@ -15,15 +15,18 @@
 #import "TiUtils.h"
 #import "TiApp.h"
 #import "ApplicationMods.h"
+#import <libkern/OSAtomic.h>
 
-#ifdef DEBUGGER_ENABLED
-#import "TiDebuggerContext.h"
 #import "TiDebugger.h"
-#endif
 
 extern BOOL const TI_APPLICATION_ANALYTICS;
 
 @implementation onfireObject
+
+-(NSDictionary*)modules
+{
+	return modules;
+}
 
 -(id)initWithContext:(KrollContext*)context_ host:(TiHost*)host_ context:(id<TiEvaluator>)pageContext_ baseURL:(NSURL*)baseURL_
 {
@@ -37,6 +40,7 @@ extern BOOL const TI_APPLICATION_ANALYTICS;
 	{
 		modules = [[NSMutableDictionary alloc] init];
 		host = [host_ retain];
+		[(KrollBridge *)pageContext_ registerProxy:module krollObject:self];
 		
 		// pre-cache a few modules we always use
 		TiModule *ui = [host moduleNamed:@"UI" context:pageContext_];
@@ -136,7 +140,8 @@ extern BOOL const TI_APPLICATION_ANALYTICS;
 
 -(KrollObject*)addModule:(NSString*)name module:(TiModule*)module
 {
-	KrollObject *ko = [[[KrollObject alloc] initWithTarget:module context:context] autorelease];
+	KrollObject *ko = [pageContext registerProxy:module];
+	[self noteKrollObject:ko forKey:name];	
 	[modules setObject:ko forKey:name];
 	return ko;
 }
@@ -148,8 +153,37 @@ extern BOOL const TI_APPLICATION_ANALYTICS;
 
 @end
 
+OSSpinLock krollBridgeRegistryLock = OS_SPINLOCK_INIT;
+CFMutableSetRef	krollBridgeRegistry = nil;
 
 @implementation KrollBridge
+
++(void)initialize
+{
+	if (krollBridgeRegistry == nil)
+	{
+		CFSetCallBacks doNotRetain = kCFTypeSetCallBacks;
+		doNotRetain.retain = NULL;
+		doNotRetain.release = NULL;
+		krollBridgeRegistry = CFSetCreateMutable(NULL, 3, &doNotRetain);
+	}
+}
+@synthesize currentURL;
+
+-(void)registerForMemoryWarning
+{
+	WARN_IF_BACKGROUND_THREAD_OBJ;	//NSNotificationCenter is not threadsafe!
+	[[NSNotificationCenter defaultCenter] addObserver:self
+			selector:@selector(didReceiveMemoryWarning:)
+			name:UIApplicationDidReceiveMemoryWarningNotification  
+			object:nil]; 
+}
+
+-(void)unregisterForMemoryWarning
+{
+	WARN_IF_BACKGROUND_THREAD_OBJ;	//NSNotificationCenter is not threadsafe!
+	[[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+}
 
 -(id)init
 {
@@ -157,32 +191,44 @@ extern BOOL const TI_APPLICATION_ANALYTICS;
 	{
 #if KROLLBRIDGE_MEMORY_DEBUG==1
 		NSLog(@"INIT: %@",self);
-#endif
-		WARN_IF_BACKGROUND_THREAD_OBJ;	//NSNotificationCenter is not threadsafe!
-		[[NSNotificationCenter defaultCenter] addObserver:self
-												 selector:@selector(didReceiveMemoryWarning:)
-													 name:UIApplicationDidReceiveMemoryWarningNotification  
-												   object:nil]; 
-		
+#endif		
 		proxyLock = [[NSRecursiveLock alloc] init];
+		OSSpinLockLock(&krollBridgeRegistryLock);
+		CFSetAddValue(krollBridgeRegistry, self);
+		OSSpinLockUnlock(&krollBridgeRegistryLock);
+		[self performSelectorOnMainThread:@selector(registerForMemoryWarning) withObject:nil waitUntilDone:NO];
 	}
 	return self;
 }
 
 -(void)didReceiveMemoryWarning:(NSNotification*)notification
 {
-	if (proxies!=nil)
+	SEL sel = @selector(didReceiveMemoryWarning:);
+	BOOL keepWarning = YES;
+	int proxiesCount = [proxies count];
+
+	//During a memory panic, we may not get the chance to copy proxies.
+	while (keepWarning)
 	{
-		SEL sel = @selector(didReceiveMemoryWarning:);
-		// we have to copy during traversal since proxies can be removed during
-		for (id proxy in [NSArray arrayWithArray:proxies])
+		keepWarning = NO;
+		for (id proxy in proxies)
 		{
-			if ([proxy respondsToSelector:sel])
+			if (![proxy respondsToSelector:sel])
 			{
-				[proxy didReceiveMemoryWarning:notification];
+				continue;
+			}
+
+			[proxy didReceiveMemoryWarning:notification];
+			int newCount = [proxies count];
+			if (newCount != proxiesCount)
+			{
+				proxiesCount = newCount;
+				keepWarning = YES;
+				break;
 			}
 		}
 	}
+
 	[self gc];
 }
 
@@ -203,20 +249,26 @@ extern BOOL const TI_APPLICATION_ANALYTICS;
 -(void)removeProxies
 {
 	[proxyLock lock];
-	if (proxies!=nil)
-	{
-		SEL sel = @selector(contextShutdown:);
-		// we have to make a copy since shutdown will possibly remove
-		for (id proxy in [NSArray arrayWithArray:proxies])
-		{
-			if ([proxy respondsToSelector:sel])
-			{
-				[proxy contextShutdown:self];
-			}
-		}
-	}
-	[proxyLock unlock];
+
+	CFDictionaryRef oldProxies = registeredProxies;
+	registeredProxies = nil;
 	RELEASE_TO_NIL(proxies);
+	[proxyLock unlock];
+	
+	for (id thisProxy in (NSDictionary *)oldProxies)
+	{
+		KrollObject * thisKrollObject = (id)CFDictionaryGetValue(oldProxies, thisProxy);
+			if ([thisProxy respondsToSelector:@selector(contextShutdown:)])
+			{
+				[thisProxy contextShutdown:self];
+			}
+		[thisKrollObject unprotectJsobject];
+	}
+
+	if (oldProxies != NULL)
+	{
+		CFRelease(oldProxies);
+	}
 }
 
 -(void)dealloc
@@ -224,16 +276,16 @@ extern BOOL const TI_APPLICATION_ANALYTICS;
 #if KROLLBRIDGE_MEMORY_DEBUG==1
 	NSLog(@"DEALLOC: %@",self);
 #endif
-	
-	WARN_IF_BACKGROUND_THREAD_OBJ;	//NSNotificationCenter is not threadsafe!
-	[[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
-	
+		
 	[self removeProxies];
 	RELEASE_TO_NIL(preload);
 	RELEASE_TO_NIL(context);
 	RELEASE_TO_NIL(_onfire);
 	RELEASE_TO_NIL(modules);
 	RELEASE_TO_NIL(proxyLock);
+	OSSpinLockLock(&krollBridgeRegistryLock);
+	CFSetRemoveValue(krollBridgeRegistry, self);
+	OSSpinLockUnlock(&krollBridgeRegistryLock);
 	[super dealloc];
 }
 
@@ -336,7 +388,7 @@ extern BOOL const TI_APPLICATION_ANALYTICS;
 	
 	const char *urlCString = [[url_ absoluteString] UTF8String];
 	
-	TiStringRef jsCode = TiStringCreateWithUTF8CString([jcode UTF8String]);
+	TiStringRef jsCode = TiStringCreateWithCFString((CFStringRef) jcode);
 	TiStringRef jsURL = TiStringCreateWithUTF8CString(urlCString);
 	
 	// validate script
@@ -351,22 +403,16 @@ extern BOOL const TI_APPLICATION_ANALYTICS;
 	// only continue if we don't have any exceptions from above
 	if (exception == NULL)
 	{
-#ifdef DEBUGGER_ENABLED
-		Ti::TiDebuggerContext* debugger = static_cast<Ti::TiDebuggerContext*>([context_ debugger]);
-		if (debugger!=NULL)
-		{
-			debugger->beginScriptEval(urlCString);
-		}
-#endif
+        if ([[self host] debugMode]) {
+            TiDebuggerBeginScript(context_,urlCString);
+        }
 		
 		TiEvalScript(jsContext, jsCode, NULL, jsURL, 1, &exception);
 		
-#ifdef DEBUGGER_ENABLED		
-		if (debugger!=NULL)
-		{
-			debugger->endScriptEval();
-		}
-#endif		
+        if ([[self host] debugMode]) {
+            TiDebuggerEndScript(context_);
+        }
+
 		if (exception!=NULL)
 		{
 			id excm = [KrollObject toID:context value:exception];
@@ -391,15 +437,29 @@ extern BOOL const TI_APPLICATION_ANALYTICS;
 
 - (void)fireEvent:(id)listener withObject:(id)obj remove:(BOOL)yn thisObject:(TiProxy*)thisObject_
 {
-	if ([listener isKindOfClass:[KrollCallback class]])
-	{
-		[context invokeEvent:listener args:[NSArray arrayWithObject:obj] thisObject:thisObject_];
-	}
-	else 
+	if (![listener isKindOfClass:[KrollCallback class]])
 	{
 		NSLog(@"[ERROR] listener callback is of a non-supported type: %@",[listener class]);
+		return;
 	}
-	
+
+	KrollEvent *event = [[KrollEvent alloc] initWithCallback:listener eventObject:obj thisObject:thisObject_];
+	[context enqueue:event];
+	[event release];
+}
+
+-(void)enqueueEvent:(NSString*)type forProxy:(TiProxy *)proxy withObject:(id)obj withSource:(id)source
+{
+	KrollObject * eventKrollObject = [self krollObjectForProxy:proxy];
+	KrollObject * sourceObject = [self krollObjectForProxy:source];
+	if (sourceObject == nil)
+	{
+		sourceObject = eventKrollObject;
+	}
+	KrollEvent * newEvent = [[KrollEvent alloc] initWithType:type ForKrollObject:eventKrollObject
+			 eventObject:obj thisObject:sourceObject];
+	[context enqueue:newEvent];
+	[newEvent release];
 }
 
 -(void)injectPatches
@@ -454,15 +514,15 @@ extern BOOL const TI_APPLICATION_ANALYTICS;
 -(void)didStartNewContext:(KrollContext*)kroll
 {
 	// create onfire global object
-	NSString *basePath = (url==nil) ? [[NSBundle mainBundle] resourcePath] : [[url path] stringByDeletingLastPathComponent];
+	NSString *basePath = (url==nil) ? [TiHost resourcePath] : [[[url path] stringByDeletingLastPathComponent] stringByAppendingPathComponent:@"."];
 	_onfire = [[onfireObject alloc] initWithContext:kroll host:host context:self baseURL:[NSURL fileURLWithPath:basePath]];
 	
 	TiContextRef jsContext = [kroll context];
 	TiValueRef tiRef = [KrollObject toValue:kroll value:_onfire];
 	
 	NSString *_onfireNS = [NSString stringWithFormat:@"T%sanium","it"];
-	TiStringRef prop = TiStringCreateWithUTF8CString([_onfireNS UTF8String]);
-	TiStringRef prop2 = TiStringCreateWithUTF8CString([[NSString stringWithFormat:@"%si","T"] UTF8String]);
+	TiStringRef prop = TiStringCreateWithCFString((CFStringRef) _onfireNS);
+	TiStringRef prop2 = TiStringCreateWithCFString((CFStringRef) [NSString stringWithFormat:@"%si","T"]);
 	TiObjectRef globalRef = TiContextGetGlobalObject(jsContext);
 	TiObjectSetProperty(jsContext, globalRef, prop, tiRef, NULL, NULL);
 	TiObjectSetProperty(jsContext, globalRef, prop2, tiRef, NULL, NULL);
@@ -479,9 +539,13 @@ extern BOOL const TI_APPLICATION_ANALYTICS;
 			for (id key in values)
 			{
 				id target = [values objectForKey:key];
-				KrollObject *ko = [[KrollObject alloc] initWithTarget:target context:context];
+				KrollObject *ko = [self krollObjectForProxy:target];
+				if (ko==nil)
+				{
+					ko = [self registerProxy:target];
+				}
+				[ti noteKrollObject:ko forKey:key];
 				[ti setStaticValue:ko forKey:key purgable:NO];
-				[ko release];
 			}
 		}
 		[self injectPatches];
@@ -519,6 +583,7 @@ extern BOOL const TI_APPLICATION_ANALYTICS;
 
 -(void)didStopNewContext:(KrollContext*)kroll
 {
+	[self performSelectorOnMainThread:@selector(unregisterForMemoryWarning) withObject:nil waitUntilDone:NO];
 	[self removeProxies];
 	RELEASE_TO_NIL(_onfire);
 	RELEASE_TO_NIL(context);
@@ -527,15 +592,49 @@ extern BOOL const TI_APPLICATION_ANALYTICS;
 	[self autorelease]; // Safe to release now that the context is done
 }
 
-- (void)registerProxy:(id)proxy 
+-(void)registerProxy:(id)proxy krollObject:(KrollObject *)ourKrollObject
 {
 	[proxyLock lock];
-	if (proxies==nil)
-	{ 
-		proxies = [[NSMutableArray alloc] initWithCapacity:50];
+	if (registeredProxies==NULL)
+	{
+		registeredProxies = CFDictionaryCreateMutable(NULL, 10, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
 	}
-	[proxies addObject:proxy];
+	//NOTE: Do NOT treat registeredProxies like a mutableDictionary; mutable dictionaries copy keys,
+	//CFMutableDictionaryRefs only retain keys, which lets them work with proxies properly.
+
+	CFDictionaryAddValue(registeredProxies, proxy, ourKrollObject);	
 	[proxyLock unlock];
+}
+
+- (id)registerProxy:(id)proxy 
+{
+	KrollObject * ourKrollObject = [self krollObjectForProxy:proxy];
+	
+	if (ourKrollObject != nil)
+	{
+		return ourKrollObject;
+	}
+
+	if (![context isKJSThread])
+	{
+		return nil;
+	}
+
+	[proxyLock lock];
+	if (proxies==nil)
+	{
+		proxies = TiCreateNonRetainingArray();
+	}
+	if (![proxies containsObject:proxy])
+	{
+		[proxies addObject:proxy];
+	}
+	[proxyLock unlock];
+	
+	ourKrollObject = [[KrollObject alloc] initWithTarget:proxy context:context];
+
+	[self registerProxy:proxy krollObject:ourKrollObject];
+	return [ourKrollObject autorelease];
 }
 
 - (void)unregisterProxy:(id)proxy
@@ -549,7 +648,40 @@ extern BOOL const TI_APPLICATION_ANALYTICS;
 			RELEASE_TO_NIL(proxies);
 		}
 	}
+	if (registeredProxies != NULL)
+	{
+		CFDictionaryRemoveValue(registeredProxies, proxy);
+		//Don't bother with removing the empty registry. It's small and leaves on dealloc anyways.
+	}
 	[proxyLock unlock];
+}
+
+- (BOOL)usesProxy:(id)proxy
+{
+	if (proxy == nil)
+	{
+		return NO;
+	}
+	BOOL result=NO;
+	[proxyLock lock];
+	if (registeredProxies != NULL)
+	{
+		result = (CFDictionaryGetCountOfKey(registeredProxies, proxy) != 0);
+	}
+	[proxyLock unlock];
+	return result;
+}
+
+- (id)krollObjectForProxy:(id)proxy
+{
+	id result=nil;
+	[proxyLock lock];
+	if (registeredProxies != NULL)
+	{
+		result = (id)CFDictionaryGetValue(registeredProxies, proxy);
+	}
+	[proxyLock unlock];
+	return result;
 }
 
 -(id)loadCommonJSModule:(NSString*)code withPath:(NSString*)path
@@ -659,6 +791,101 @@ extern BOOL const TI_APPLICATION_ANALYTICS;
 	}
 	
 	@throw [NSException exceptionWithName:@"org.onfire.kroll" reason:[NSString stringWithFormat:@"Couldn't find module: %@",path] userInfo:nil];
+}
+
++ (int)countOfKrollBridgesUsingProxy:(id)proxy
+{
+	int result = 0;
+
+	OSSpinLockLock(&krollBridgeRegistryLock);
+	int bridgeCount = CFSetGetCount(krollBridgeRegistry);
+	KrollBridge * registryObjects[bridgeCount];
+	CFSetGetValues(krollBridgeRegistry, (const void **)registryObjects);
+	
+	for (int currentBridgeIndex = 0; currentBridgeIndex < bridgeCount; currentBridgeIndex++)
+	{
+		KrollBridge * currentBridge = registryObjects[currentBridgeIndex];
+		if (![currentBridge usesProxy:proxy])
+		{
+			continue;
+		}
+		result ++;
+	}
+
+	//Why do we wait so long? In case someone tries to dealloc the krollBridge while we're looking at it.
+	//registryObjects nor the registry does a retain here!
+	OSSpinLockUnlock(&krollBridgeRegistryLock);
+	return result;
+}
+
++ (NSArray *)krollBridgesUsingProxy:(id)proxy
+{
+	NSMutableArray * results = nil;
+
+	OSSpinLockLock(&krollBridgeRegistryLock);
+	int bridgeCount = CFSetGetCount(krollBridgeRegistry);
+	KrollBridge * registryObjects[bridgeCount];
+	CFSetGetValues(krollBridgeRegistry, (const void **)registryObjects);
+	
+	for (int currentBridgeIndex = 0; currentBridgeIndex < bridgeCount; currentBridgeIndex++)
+	{
+		KrollBridge * currentBridge = registryObjects[currentBridgeIndex];
+		if (![currentBridge usesProxy:proxy])
+		{
+			continue;
+		}
+		if (results == nil)
+		{
+			results = [NSMutableArray arrayWithObject:currentBridge];
+			continue;
+		}
+		[results addObject:currentBridge];
+	}
+
+	//Why do we wait so long? In case someone tries to dealloc the krollBridge while we're looking at it.
+	//registryObjects nor the registry does a retain here!
+	OSSpinLockUnlock(&krollBridgeRegistryLock);
+	return results;
+}
+
++ (BOOL)krollBridgeExists:(KrollBridge *)bridge
+{
+	if(bridge == nil)
+	{
+		return NO;
+	}
+
+	bool result=NO;
+	OSSpinLockLock(&krollBridgeRegistryLock);
+	int bridgeCount = CFSetGetCount(krollBridgeRegistry);
+	KrollBridge * registryObjects[bridgeCount];
+	CFSetGetValues(krollBridgeRegistry, (const void **)registryObjects);
+	for (int currentBridgeIndex = 0; currentBridgeIndex < bridgeCount; currentBridgeIndex++)
+	{
+		KrollBridge * currentBridge = registryObjects[currentBridgeIndex];
+		if (currentBridge == bridge)
+		{
+			result = YES;
+			break;
+		}
+	}
+	//Why not CFSetContainsValue? Because bridge may not be a valid pointer, and SetContainsValue
+	//will ask it for a hash!
+	OSSpinLockUnlock(&krollBridgeRegistryLock);
+
+	return result;
+}
+
+-(int)forceGarbageCollectNow;
+{
+	[context gc];
+	//Actually forcing garbage collect now will cause a deadlock.
+	return 0;
+}
+
+-(BOOL)shouldDebugContext
+{
+    return [[self host] debugMode];
 }
 
 @end

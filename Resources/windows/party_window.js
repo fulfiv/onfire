@@ -34,7 +34,12 @@ var refreshButton = Titanium.UI.createButton({
 
 refreshButton.addEventListener('click', function()
 {
-	fetchParties();
+	if (Titanium.Platform.name != 'android') {
+		fetchParties();
+	}
+	else {
+		refreshLocation();
+	}
 });
 win.add(refreshButton);
 
@@ -52,6 +57,7 @@ function refreshLocation(){
 	getLocation(function()
 	{
 		locationLabel.text = 'Parties near ' + latitude + ', ' + longitude;
+		Ti.API.info('Got location, loading parties.')
 		fetchParties();
 	});
 }
@@ -83,21 +89,29 @@ function fetchParties() {
 	xhr.onload = function(e) {
 		statusLabel.text = 'Success' + e;
 		var partiesData = JSON.parse(this.responseText);
-		Ti.API.debug(partiesData);
+		Ti.API.info(partiesData);
 		
 		updatePartiesList(partiesData);
 	};
 	
 	xhr.onerror = function(e) {
 		statusLabel.text = 'Error:' + e;
+		Ti.API.error(e);
 	};
 	
 	statusLabel.text = 'Loading parties...';
-	xhr.open('GET','http://onfire-server.herokuapp.com/parties.json?latitude=' + latitude + '&longitude=' + longitude);
+	if (latitude && longitude) {
+		xhr.open('GET','http://onfire-server.herokuapp.com/parties.json?latitude=' + latitude + '&longitude=' + longitude);
+	}
+	else {
+		xhr.open('GET','http://onfire-server.herokuapp.com/parties.json');
+	}
 	xhr.send();
 }
 
-refreshLocation();
+if (Titanium.Platform.name != 'android') {
+	refreshLocation();
+}
 
 win.addEventListener('open', function()
 {
@@ -108,7 +122,6 @@ win.addEventListener('focus', function()
 {
 	Ti.API.info('Focus fired on Parties window');
 	statusLabel.text = 'Focus fired ';
-//	fetchParties();
 });
 
 win.addEventListener('click', function()

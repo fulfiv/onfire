@@ -17,6 +17,7 @@
 #import "TiFacebookRequest.h"
 #import "TiFacebookDialogRequest.h"
 #import "TiFacebookLoginButtonProxy.h"
+#import "SBJSON.h"
 
 /**
  * Good reference for access_tokens and what all this crap means
@@ -145,6 +146,7 @@
 	VerboseLog(@"[DEBUG] facebook startup");
 	
 	[super startup];
+    forceDialogAuth = YES;
 	[self _restore];
 	[self handleRelaunch];
 }
@@ -164,7 +166,7 @@
 
 #pragma mark Internal
 
--(NSString*)convertBlobParams:(NSMutableDictionary*)params
+-(NSString*)convertParams:(NSMutableDictionary*)params
 {
 	NSString* httpMethod = nil;
 	for (NSString *key in [params allKeys])
@@ -203,6 +205,16 @@
 				[params setObject:data forKey:key];
 			}
 		}
+        // All other arguments need to be encoded as JSON if they aren't strings
+        else if (![param isKindOfClass:[NSString class]]) {
+            NSString* json_value = [SBJSON stringify:param];
+            if (json_value == nil) {
+                NSLog(@"Unable to encode argument %@:%@ to JSON: Encoding as ''",key,param);
+                [params setObject:@"" forKey:key];
+                continue;
+            }
+            [params setObject:json_value forKey:key];
+        }            
 	}
 	return httpMethod;
 }
@@ -264,6 +276,18 @@
  * JS example:
  *
  * var facebook = require('facebook');
+ * alert(facebook.forceDialogAuth);
+ * 
+ */
+-(id)forceDialogAuth
+{
+    return [NSNumber numberWithBool:forceDialogAuth];
+}
+
+/**
+ * JS example:
+ *
+ * var facebook = require('facebook');
  * alert(facebook.accessToken);
  * 
  */
@@ -316,6 +340,19 @@
  * JS example:
  *
  * var facebook = require('facebook');
+ * facebook.forceDialogAuth = true;
+ * alert(facebook.forceDialogAuth);
+ * 
+ */
+-(void)setForceDialogAuth:(id)arg
+{
+    forceDialogAuth = [TiUtils boolValue:arg def:NO];
+}
+
+/**
+ * JS example:
+ *
+ * var facebook = require('facebook');
  *
  * facebook.addEventListener('login',function(e) {
  *    if (e.success) {
@@ -359,7 +396,7 @@
 	[self _unsave];
 	
 	NSArray *permissions_ = permissions == nil ? [NSArray array] : permissions;
-	[facebook authorize:appid permissions:permissions_ delegate:self];
+	[facebook authorize:appid permissions:permissions_ forceDialog:forceDialogAuth delegate:self];
 }
 
 /**
@@ -405,7 +442,7 @@
 	NSString* httpMethod = [args objectAtIndex:2];
 	KrollCallback* callback = [args objectAtIndex:3];
 
-	[self convertBlobParams:params];
+	[self convertParams:params];
 	
 	TiFacebookRequest* delegate = [[[TiFacebookRequest alloc] initWithPath:path callback:callback module:self graph:YES] autorelease];
 	[facebook requestWithGraphPath:path andParams:params andHttpMethod:httpMethod andDelegate:delegate];
@@ -438,7 +475,7 @@
 	KrollCallback* callback = [args objectAtIndex:2];
 	
 	NSString *httpMethod = @"GET";
-	NSString* changedHttpMethod = [self convertBlobParams:params];
+	NSString* changedHttpMethod = [self convertParams:params];
 	if (changedHttpMethod != nil) {
 		httpMethod = changedHttpMethod;
 	}
@@ -469,7 +506,7 @@
 	NSMutableDictionary* params = [args objectAtIndex:1];
 	KrollCallback* callback = [args objectAtIndex:2];
 	
-	[self convertBlobParams:params];
+	[self convertParams:params];
 	
 	TiFacebookDialogRequest *delegate = [[[TiFacebookDialogRequest alloc] initWithCallback:callback module:self] autorelease];
 	[facebook dialog:action andParams:params andDelegate:delegate];
@@ -485,7 +522,7 @@
  */
 -(id)createLoginButton:(id)args
 {
-	return [[[TiFacebookLoginButtonProxy alloc] _initWithPageContext:[self pageContext] args:args module:self] autorelease];
+	return [[[TiFacebookLoginButtonProxy alloc] _initWithPageContext:[self executionContext] args:args module:self] autorelease];
 }
 
 #pragma mark Listener work

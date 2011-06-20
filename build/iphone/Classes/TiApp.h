@@ -15,6 +15,7 @@
 	#import "XHRBridge.h"
 #endif
 #import "TiRootViewController.h"
+#import <TiCore/TiContextRef.h>
 
 @interface TiApp : TiHost <UIApplicationDelegate> 
 {
@@ -23,7 +24,8 @@
 	BOOL splashAttached;
 	BOOL loaded;
 	BOOL handledModal;
-	
+
+	TiContextGroupRef contextGroup;
 	KrollBridge *kjsBridge;
 
 #ifdef USE_TI_UIWEBVIEW
@@ -35,7 +37,6 @@
 	
 	int networkActivityCount; //We now can use atomic increment/decrement instead. This value is 0 upon initialization anyways.
 	
-	// TODO: Create a specialized SplitView controller if necessary
 	UIViewController<TiRootController> *controller;
 	NSString *userAgent;
 	NSString *remoteDeviceUUID;
@@ -57,10 +58,11 @@
 @property (nonatomic, assign) id remoteNotificationDelegate;
 @property (nonatomic, readonly) NSDictionary* remoteNotification;
 @property (nonatomic, retain) UIViewController<TiRootController>* controller;
-
+@property (nonatomic, readonly) TiContextGroupRef contextGroup;
 +(TiApp*)app;
 //Convenience method
 +(UIViewController<TiRootController>*)controller;
++(TiContextGroupRef)contextGroup;
 
 -(void)attachXHRBridgeIfRequired;
 

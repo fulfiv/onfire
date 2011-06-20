@@ -10,6 +10,14 @@
 
 #ifdef USE_TI_DATABASE
 
+typedef enum {
+	FieldTypeUnknown = -1,
+	FieldTypeString,
+	FieldTypeInt,
+	FieldTypeFloat,
+	FieldTypeDouble
+} DatabaseFieldType;
+
 @interface DatabaseModule : TiModule {
 }
 

@@ -36,6 +36,7 @@
 	{
 		launcher = [[LauncherView alloc] initWithFrame:CGRectMake(0, 0, 320, 400)];
 		launcher.delegate = self;
+        [launcher setEditable:[[[self proxy] valueForUndefinedKey:@"editable"] boolValue]];
 		[self addSubview:launcher];
 	}
 	return launcher;
@@ -47,6 +48,16 @@
 	{
 		[TiUtils setView:launcher positionRect:bounds];
 	}
+}
+
+-(void)setEditable_:(id)args
+{
+    ENSURE_TYPE(args, NSNumber);
+    
+    if (launcher != nil) {
+        [launcher setEditable:[args boolValue]];
+    }
+    [[self proxy] replaceValue:args forKey:@"editable" notification:NO];
 }
 
 -(void)setData_:(id)args

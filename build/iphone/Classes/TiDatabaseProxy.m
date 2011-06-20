@@ -123,12 +123,12 @@
 	}
 }
 
-#pragma mark Public APIs
-
 -(id)execute:(id)args
 {
-	NSString *sql = [[args objectAtIndex:0] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+	ENSURE_TYPE(args, NSArray);
 
+	NSString *sql = [[args objectAtIndex:0] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+	
 	NSError *error = nil;
 	PLSqlitePreparedStatement * statement = (PLSqlitePreparedStatement *) [database prepareStatement:sql error:&error];
 	if (error!=nil)
@@ -136,10 +136,14 @@
 		[self throwException:@"invalid SQL statement" subreason:[error description] location:CODELOCATION];
 	}
 	
-	if ([args count]>1)
-	{
-		NSArray *params = [args subarrayWithRange:NSMakeRange(1, [args count]-1)];
-		[statement bindParameters:params];				   
+	if([args count] > 1) {
+		NSArray *params = [args objectAtIndex:1];
+
+		if(![params isKindOfClass:[NSArray class]]) {
+		   params = [args subarrayWithRange:NSMakeRange(1, [args count]-1)];
+		}
+
+		[statement bindParameters:params];
 	}
 	
 	PLSqliteResultSet *result = (PLSqliteResultSet*) [statement executeQuery];
