@@ -1,0 +1,4 @@
+.project
+.settings/*
+build.log
+build/*

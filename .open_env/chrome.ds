@@ -1,0 +1,7 @@
+(if
+(is (application_name) "google-chrome")
+(begin
+(set_viewport 4)
+(maximize)
+)
+)
