@@ -1,0 +1,7 @@
+(if
+(is (application_name) "gedit")
+(begin
+(set_viewport 2)
+(maximize)
+)
+)

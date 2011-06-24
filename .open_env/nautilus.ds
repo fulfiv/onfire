@@ -1,5 +1,5 @@
 (if
-(is (application_name) "Terminal")
+(is (application_name) "nautilus")
 (begin
 (set_viewport 3)
 (maximize)

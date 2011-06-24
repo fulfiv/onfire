@@ -9,7 +9,7 @@ var tabGroup = Titanium.UI.createTabGroup();
 //
 var win1 = Titanium.UI.createWindow({  
     title:'Tab 1',
-    backgroundColor:'#fff',
+    backgroundColor:'#000',
     url:'geolocation.js'
 });
 

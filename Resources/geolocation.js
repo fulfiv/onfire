@@ -284,6 +284,19 @@ function getLocation()
 	//
 	Titanium.Geolocation.getCurrentPosition(function(e)
 	{
+		
+		
+		alert("ID: " + Ti.Platform.id+ "\n"+
+			  "Mac Adress: " + Ti.Platform.macaddress+ "\n"+
+			  "name: " + Ti.Platform.name+ "\n"+
+			  "username: " + Ti.Platform.username+ "\n"+
+			  "processorCount: " + Ti.Platform.processorCount+ "\n"+
+			  "osname: " + Ti.Platform.osname+ "\n"+
+			  "version: " + Ti.Platform.version+ "\n"+
+			  "model: " + Ti.Platform.model+ "\n"
+			  );
+		
+		
 		if (!e.success || e.error)
 		{
 			currentLocation.text = 'error: ' + JSON.stringify(e.error);
