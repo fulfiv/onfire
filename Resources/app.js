@@ -18,17 +18,7 @@ var tab1 = Titanium.UI.createTab({
     title:'Set Fire',
     window:win1
 });
-/*
-var label1 = Titanium.UI.createLabel({
-	color:'#999',
-	text:'Set fire here',
-	font:{fontSize:20,fontFamily:'Helvetica Neue'},
-	textAlign:'center',
-	width:'auto'
-});
 
-win1.add(label1);
-*/
 //
 // create controls tab and root window
 //
