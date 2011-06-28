@@ -1,5 +1,6 @@
 (function() {
-  isIPhone3_2_Plus()(function() {
+  var isIPhone3_2_Plus, isiOS4Plus;
+  isIPhone3_2_Plus = function() {
     var major, minor, version;
     if (Titanium.Platform.name === 'iPhone OS') {
       version = Titanium.Platform.version.split(".");
@@ -10,8 +11,8 @@
       }
     }
     return false;
-  });
-  isiOS4Plus()(function() {
+  };
+  isiOS4Plus = function() {
     var major, version;
     if (Titanium.Platform.name === 'iPhone OS') {
       version = Titanium.Platform.version.split(".");
@@ -21,5 +22,5 @@
       }
     }
     return false;
-  });
+  };
 }).call(this);

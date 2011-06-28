@@ -16,6 +16,8 @@ cd /home/nicolas/Downloads/Titanium\ Studio
 ./TitaniumStudio &
 cd /home/nicolas/Downloads/Titanium\ Developer-1.2.2
 ./Titanium\ Developer &
+cd /home/nicolas/Downloads/Sublime\ Text\ 2
+./sublime_text &
 
 # open terminals
 #gnome-terminal -t titanium studio -x sh -c "/home/nicolas/Downloads/Titanium\ Studio/TitaniumStudio" --maximize &
