@@ -27,8 +27,8 @@ cd /home/nicolas/Downloads/Sublime\ Text\ 2
 #gnome-terminal -t emulator -x sh -c "android create avd -n 'nico_avd_2-3-3' -t 'Google Inc.:Google APIs:10' -s 'HVGA' -f  ; sleep 2 ; emulator #@nico_avd_2-3-3" --maximize &
 
 #Fastdev et premier build
-gnome-terminal -t fastdev -x sh -c "cd $HOME/mobileapps/onfire ; $HOME/.titanium/mobilesdk/linux/1.7.2.v20110622103439/titanium.py fastdev start" --maximize &
-gnome-terminal -t build -x sh -c "cd $HOME/mobileapps/onfire ; $HOME/.titanium/mobilesdk/linux/1.7.2.v20110622103439/titanium.py run --platform=android --android=/home/nicolas/Downloads/android-sdk-linux_x86" --maximize & 
+gnome-terminal -t fastdev -x sh -c "cd $HOME/mobileapps/onfire ; $HOME/.titanium/mobilesdk/linux/1.7.2.v20110628101038/titanium.py fastdev start" --maximize &
+gnome-terminal -t build -x sh -c "cd $HOME/mobileapps/onfire ; $HOME/.titanium/mobilesdk/linux/1.7.2.v20110628101038/titanium.py run --platform=android --android=/home/nicolas/Downloads/android-sdk-linux_x86" --maximize & 
 
 #gnome-terminal -t coffee_irb -x sh -c "coffee" --maximize &
 gnome-terminal -t coffee_build -x sh -c "cd $HOME/mobileapps/onfire ; coffee -c --watch Resources " --maximize &
@@ -40,7 +40,8 @@ gnome-terminal -t git_gui --maximize &
 nautilus &
 
 # open chrome
-google-chrome "https://mail.directgroupfrance.fr/OWA" "gmail.com" --process-per-tab &
+google-chrome "https://mail.directgroupfrance.fr/OWA" "DGF" --process-per-tab &
+google-chrome "https://mail.google.fr" "gmail.com" --process-per-tab &
 
 sleep 30
 

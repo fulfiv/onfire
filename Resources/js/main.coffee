@@ -6,7 +6,7 @@ main_tabgroup = Titanium.UI.createTabGroup()
 
 #create base UI tab and root window
 root.fire_window = new root.GenericWindow('Set Fire', '', 'js/windows/fire_window.js')
-fire_tab = Titanium.UI.createTab  
+fire_tab = Ti.UI.createTab  
     icon: 'images/KS_nav_views.png',
     title: 'Set Fire',
     window: root.fire_window.win
@@ -31,7 +31,7 @@ root.party_window = new root.GenericWindow('Parties', '', 'js/windows/party_wind
 #});
 
 
-party_tab = Titanium.UI.createTab
+party_tab = Ti.UI.createTab
 	icon: 'images/KS_nav_views.png',
 	title: 'Parties',
 	window: root.party_window.win
@@ -46,9 +46,9 @@ party_tab = Titanium.UI.createTab
 main_tabgroup.addTab fire_tab
 main_tabgroup.addTab party_tab
 
-main_tabgroup.addEventListener 'focus', (e) ->
-	setTimeout(Ti.API.info('tab changed to ' + e.tab.title),100)
-	{}if (e.tab.title == 'Parties')
+#main_tabgroup.addEventListener 'focus', (e) ->
+#	setTimeout(Ti.API.info('tab changed to ' + e.tab.title),100)
+	#{}if (e.tab.title == 'Parties')
 
 # open tab group
 main_tabgroup.open()
