@@ -5,10 +5,20 @@ Logfile initialized
 [DEBUG] Waiting for device to be ready ...
 [TRACE] adb devices returned 1 devices/emulators
 [DEBUG] Device connected... (waited 0 seconds)
-[DEBUG] waited 0.105331 seconds on emulator to get ready
+[DEBUG] waited 0.007900 seconds on emulator to get ready
 [DEBUG] com.onfire installed? True
 [INFO] Fastdev server running, deploying in Fastdev mode
 [INFO] Copying project resources..
+[TRACE] COPYING MODIFIED FILE: /home/nicolas/mobileapps/onfire/Resources/js/windows/generic_window.js => /home/nicolas/mobileapps/onfire/build/android/bin/assets/Resources/js/windows/generic_window.js
+[TRACE] COPYING MODIFIED FILE: /home/nicolas/mobileapps/onfire/Resources/js/windows/fire_window.js => /home/nicolas/mobileapps/onfire/build/android/bin/assets/Resources/js/windows/fire_window.js
+[TRACE] COPYING MODIFIED FILE: /home/nicolas/mobileapps/onfire/Resources/js/windows/party_window.js => /home/nicolas/mobileapps/onfire/build/android/bin/assets/Resources/js/windows/party_window.js
+[TRACE] COPYING MODIFIED FILE: /home/nicolas/mobileapps/onfire/Resources/js/helper/version_helper.js => /home/nicolas/mobileapps/onfire/build/android/bin/assets/Resources/js/helper/version_helper.js
+[TRACE] COPYING MODIFIED FILE: /home/nicolas/mobileapps/onfire/Resources/js/main.js => /home/nicolas/mobileapps/onfire/build/android/bin/assets/Resources/js/main.js
+[TRACE] COPYING CREATED FILE: /home/nicolas/mobileapps/onfire/Resources/coffee/main.coffee => /home/nicolas/mobileapps/onfire/build/android/bin/assets/Resources/coffee/main.coffee
+[TRACE] COPYING CREATED FILE: /home/nicolas/mobileapps/onfire/Resources/coffee/windows/fire_window.coffee => /home/nicolas/mobileapps/onfire/build/android/bin/assets/Resources/coffee/windows/fire_window.coffee
+[TRACE] COPYING CREATED FILE: /home/nicolas/mobileapps/onfire/Resources/coffee/windows/generic_window.coffee => /home/nicolas/mobileapps/onfire/build/android/bin/assets/Resources/coffee/windows/generic_window.coffee
+[TRACE] COPYING CREATED FILE: /home/nicolas/mobileapps/onfire/Resources/coffee/windows/party_window.coffee => /home/nicolas/mobileapps/onfire/build/android/bin/assets/Resources/coffee/windows/party_window.coffee
+[TRACE] COPYING CREATED FILE: /home/nicolas/mobileapps/onfire/Resources/coffee/helper/version_helper.coffee => /home/nicolas/mobileapps/onfire/build/android/bin/assets/Resources/coffee/helper/version_helper.coffee
 [INFO] Tiapp.xml unchanged, skipping class generation
 [DEBUG] Processing Android resource drawables
 [DEBUG] found drawable-notlong-land-hdpi splash screen at /home/nicolas/mobileapps/onfire/Resources/android/images/res-notlong-land-hdpi/default.png
@@ -27,3 +37,4 @@ Logfile initialized
 [TRACE] Launch output: Starting: Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] cmp=com.onfire/.OnfireActivity }
 Warning: Activity not started, its current task has been brought to the front
 
+[INFO] Relaunched onfire ... Application should be running.
