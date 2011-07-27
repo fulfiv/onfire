@@ -1,3 +1,4 @@
+.fastdev.lock
 .project
 .settings/*
 build.log

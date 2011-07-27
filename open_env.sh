@@ -11,12 +11,11 @@ cd $HOME/mobileapps/onfire
 
 # open titanium studio
 #. /home/nicolas/Downloads/Titanium\ Studio/TitaniumStudio &
-gedit &
 cd /home/nicolas/Downloads/Titanium\ Studio
 ./TitaniumStudio &
 cd /home/nicolas/Downloads/Titanium\ Developer-1.2.2
 ./Titanium\ Developer &
-cd /home/nicolas/Downloads/Sublime\ Text\ 2
+cd /home/nicolas/Downloads/SublimeText2
 ./sublime_text &
 
 # open terminals
@@ -27,8 +26,11 @@ cd /home/nicolas/Downloads/Sublime\ Text\ 2
 #gnome-terminal -t emulator -x sh -c "android create avd -n 'nico_avd_2-3-3' -t 'Google Inc.:Google APIs:10' -s 'HVGA' -f  ; sleep 2 ; emulator #@nico_avd_2-3-3" --maximize &
 
 #Fastdev et premier build
-gnome-terminal -t fastdev -x sh -c "cd $HOME/mobileapps/onfire ; $HOME/.titanium/mobilesdk/linux/1.7.2.v20110628101038/titanium.py fastdev start" --maximize &
-gnome-terminal -t build -x sh -c "cd $HOME/mobileapps/onfire ; $HOME/.titanium/mobilesdk/linux/1.7.2.v20110628101038/titanium.py run --platform=android --android=/home/nicolas/Downloads/android-sdk-linux_x86" --maximize & 
+gnome-terminal -t fastdev -x sh -c "cd $HOME/mobileapps/onfire ; $HOME/.titanium/mobilesdk/linux/1.7.2.v20110714105039/titanium.py fastdev start" --maximize &
+
+sleep 5
+
+gnome-terminal -t build -x sh -c "cd $HOME/mobileapps/onfire ; $HOME/.titanium/mobilesdk/linux/1.7.2.v20110714105039/titanium.py run --platform=android --android=/home/nicolas/Downloads/android-sdk-linux_x86" --maximize & 
 
 #gnome-terminal -t coffee_irb -x sh -c "coffee" --maximize &
 gnome-terminal -t coffee_build -x sh -c "cd $HOME/mobileapps/onfire ; coffee -c --watch Resources " --maximize &
@@ -47,8 +49,3 @@ sleep 30
 
 # close devilspie => you can now freely open programs were you want
 killall devilspie
-
-
-
-
-

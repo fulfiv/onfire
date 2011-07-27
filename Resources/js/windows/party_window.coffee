@@ -1,6 +1,5 @@
-Ti.include("/js/helper/version.js")
+win = Ti.UI.currentWindow
 
-win = Titanium.UI.currentWindow
 win.backgroundColor = '#fff'
 
 statusLabel = Titanium.UI.createLabel
@@ -62,15 +61,14 @@ getLocation = () ->
 refreshLocation = () ->
 	getLocation()
 	
-
 updatePartiesList = (partiesData) ->
 	rowData = []
 	for i in [0..partiesData.length-1]
 		party = partiesData[i]
 		Ti.API.debug('Adding party ' + party.name)
-		row = Titanium.UI.createTableViewRow({height:'auto'})
-		partyView = Titanium.UI.createView({ height:'auto', layout:'vertical', top:5, right:5, bottom:5, left:5 })
-		partyLabel = Titanium.UI.createLabel
+		row = Ti.UI.createTableViewRow({height:'auto'})
+		partyView = Ti.UI.createView({ height:'auto', layout:'vertical', top:5, right:5, bottom:5, left:5 })
+		partyLabel = Ti.UI.createLabel
 			text:party.name + ' (' + party.latitude + ', ' + party.longitude + ')',
 			height:'auto',
 			textAlign:'left'

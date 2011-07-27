@@ -1,7 +1,7 @@
 (function() {
   var fire_tab, main_tabgroup, party_tab;
-  Titanium.UI.setBackgroundColor('#000');
-  main_tabgroup = Titanium.UI.createTabGroup();
+  Ti.UI.setBackgroundColor('#000');
+  main_tabgroup = Ti.UI.createTabGroup();
   root.fire_window = new root.GenericWindow('Set Fire', '', 'js/windows/fire_window.js');
   fire_tab = Ti.UI.createTab({
     icon: 'images/KS_nav_views.png',

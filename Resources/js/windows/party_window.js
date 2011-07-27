@@ -1,7 +1,6 @@
 (function() {
   var fetchParties, getLocation, latitude, locationLabel, longitude, parties, refreshButton, refreshLocation, statusLabel, table, updatePartiesList, win;
-  Ti.include("/js/helper/version.js");
-  win = Titanium.UI.currentWindow;
+  win = Ti.UI.currentWindow;
   win.backgroundColor = '#fff';
   statusLabel = Titanium.UI.createLabel({
     color: '#999',
@@ -67,10 +66,10 @@
     for (i = 0, _ref = partiesData.length - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
       party = partiesData[i];
       Ti.API.debug('Adding party ' + party.name);
-      row = Titanium.UI.createTableViewRow({
+      row = Ti.UI.createTableViewRow({
         height: 'auto'
       });
-      partyView = Titanium.UI.createView({
+      partyView = Ti.UI.createView({
         height: 'auto',
         layout: 'vertical',
         top: 5,
@@ -78,7 +77,7 @@
         bottom: 5,
         left: 5
       });
-      partyLabel = Titanium.UI.createLabel({
+      partyLabel = Ti.UI.createLabel({
         text: party.name + ' (' + party.latitude + ', ' + party.longitude + ')',
         height: 'auto',
         textAlign: 'left'

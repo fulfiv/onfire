@@ -1,18 +1,14 @@
 Logfile initialized
 [INFO] logfile = /home/nicolas/mobileapps/onfire/build.log
-[DEBUG] /home/nicolas/.titanium/mobilesdk/linux/1.7.2.v20110628101038/android/builder.py run /home/nicolas/mobileapps/onfire /home/nicolas/Downloads/android-sdk-linux_x86
-[INFO] Titanium SDK version: 1.7.2 (06/28/11 10:10 126918b...)
+[DEBUG] /home/nicolas/.titanium/mobilesdk/linux/1.7.2.v20110714105039/android/builder.py run /home/nicolas/mobileapps/onfire /home/nicolas/Downloads/android-sdk-linux_x86
+[INFO] Titanium SDK version: 1.7.2 (07/14/11 10:50 80f73d9...)
 [DEBUG] Waiting for device to be ready ...
 [TRACE] adb devices returned 1 devices/emulators
 [DEBUG] Device connected... (waited 0 seconds)
-[DEBUG] waited 0.005350 seconds on emulator to get ready
+[DEBUG] waited 0.105331 seconds on emulator to get ready
 [DEBUG] com.onfire installed? True
 [INFO] Fastdev server running, deploying in Fastdev mode
 [INFO] Copying project resources..
-[TRACE] COPYING MODIFIED FILE: /home/nicolas/mobileapps/onfire/Resources/js/windows/fire_window.coffee => /home/nicolas/mobileapps/onfire/build/android/bin/assets/Resources/js/windows/fire_window.coffee
-[TRACE] COPYING CREATED FILE: /home/nicolas/mobileapps/onfire/Resources/js/windows/party_window.js.old => /home/nicolas/mobileapps/onfire/build/android/bin/assets/Resources/js/windows/party_window.js.old
-[TRACE] COPYING MODIFIED FILE: /home/nicolas/mobileapps/onfire/Resources/js/windows/fire_window.js => /home/nicolas/mobileapps/onfire/build/android/bin/assets/Resources/js/windows/fire_window.js
-[TRACE] COPYING CREATED FILE: /home/nicolas/mobileapps/onfire/Resources/js/windows/party_window.coffee => /home/nicolas/mobileapps/onfire/build/android/bin/assets/Resources/js/windows/party_window.coffee
 [INFO] Tiapp.xml unchanged, skipping class generation
 [DEBUG] Processing Android resource drawables
 [DEBUG] found drawable-notlong-land-hdpi splash screen at /home/nicolas/mobileapps/onfire/Resources/android/images/res-notlong-land-hdpi/default.png

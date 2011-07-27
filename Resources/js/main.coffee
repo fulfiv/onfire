@@ -1,8 +1,8 @@
 #this sets²& the background color of the master UIView (when there are no windows/tab groups on it)
-Titanium.UI.setBackgroundColor '#000'
+Ti.UI.setBackgroundColor '#000'
 
 # create tab group
-main_tabgroup = Titanium.UI.createTabGroup()
+main_tabgroup = Ti.UI.createTabGroup()
 
 #create base UI tab and root window
 root.fire_window = new root.GenericWindow('Set Fire', '', 'js/windows/fire_window.js')

@@ -1,6 +1,11 @@
 class GenericWindow
 	constructor: (theTitle, theText, theUrl) ->
-		@win  = Ti.UI.createWindow({title: theTitle, backgroundColor: "#fff", url: theUrl})
+		test = "hell"
+		@win  = Ti.UI.createWindow({
+			title: theTitle, 
+			backgroundColor: "#fff", 
+			url: theUrl,
+			_root: root})
 		label = Ti.UI.createLabel({
 			color: '#999',
 			text: theText,
